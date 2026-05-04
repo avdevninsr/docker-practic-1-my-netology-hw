@@ -197,7 +197,7 @@ Extracting image from docker-engine... (this can take a while for large images)
 Analyzing image...
 Building cache...
 ```
-После установке сканируесм скачанный образ Терраформа, что продемонстрировано на рисунке 4:
+После установке сканируем скачанный образ Терраформа, что продемонстрировано на рисунке 4:
 
 <img src="img/%D0%9A%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4%D0%B0%20dive.PNG" alt="Рисунок 4" width="auto" height="auto"></br>
 Рисунок 4. Содержимое образа Терраформ.</br>
@@ -206,7 +206,7 @@ Building cache...
 tankist@docker-debian:~$ docker save -o terraform-latest.tar hashicorp/terraform:latest
 ```
 Лично я нашёл ровно один способ вытащить искомый файл из архива:</br>
-1) сначала я уточнил состав архива:
+1) сначала я проверил состав архива:
 ```
 tankist@docker-debian:~$ tar -tf terraform-latest.tar
 blobs/
