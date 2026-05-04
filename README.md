@@ -1,5 +1,5 @@
 # Домашнее задание «Практическое применение Docker»
-Из - за технических сложностей (образ Питона автоматически не подгружался, БД автоматически не создавалась и выдавала пустые запросы) пришлось переделывать проект (использовать вместо MySQL MariaDB и вручнукю скачивать образ Питон), поэтому большая чать ответов в виде кода.
+Из - за технических сложностей (образ Питона автоматически не подгружался, БД автоматически не создавалась и выдавала пустые запросы) пришлось переделывать проект (использовать вместо MySQL MariaDB и вручнукю скачивать образ Питон), а часть экспериментов была сделана на другой виртуальной машине, поэтому большая чать ответов в виде кода.
 
 ## Задание 0
 
@@ -201,40 +201,85 @@ Building cache...
 
 <img src="img/%D0%9A%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4%D0%B0%20dive.PNG" alt="Рисунок 4" width="auto" height="auto"></br>
 Рисунок 4. Содержимое образа Терраформ.</br>
-Как сказано на официальном сайте Докера: "Команда docker save не предназначена для сохранения конкретных файлов образа, она сохраняет образ исключительно целиком".</br>
+Как сказано на официальном сайте Докера: "Команда docker save не предназначена для сохранения конкретных файлов образа, она сохраняет образ исключительно целиком". Но я всё же нашёл способ это сделать.</br>
 ```
 tankist@docker-debian:~$ docker save -o terraform-latest.tar hashicorp/terraform:latest
 ```
-Лично я нашёл ровно один способ вытащить искомый файл из архива:</br>
-1) сначала я проверил состав архива:
+Сначала на всякий случай даём архиву максимальные права (потом всё равно удалим) и утилитой tar распаковываем его:
 ```
-tankist@docker-debian:~$ tar -tf terraform-latest.tar
+root@docker-vm:/home/tankist/Опыты с Терраформом# chmod 777 terraform-latest.tar
+root@docker-vm:/home/tankist/Опыты с Терраформом# tar -xvf terraform-latest.tar
 blobs/
 blobs/sha256/
-blobs/sha256/015350b1d4482a767d4bab61ca8ee60e838b195e6fc6de8435a267bed267f610
-blobs/sha256/1812937c038436596a004e3a8939625ae46e73db009caecc5428870263c0089d
-blobs/sha256/2762c175fb20c644c31f5e783a1aa1de6b20537ad863b000c57649ae69bcb07c
+blobs/sha256/278ee20f2c63c723e9c27a3e07ac9607fc3a88bcf05db770b3b6998b74d87171
 blobs/sha256/76cbedd71a05bf6e8513645fbf8bf436d911348bb3f027280fb28a7476ed12d0
-blobs/sha256/ba95657bb7499eb8fdde6f6a336f6fb5a3f6fe56e8aea644b35fc0be00660114
-blobs/sha256/be527953936d1bcdf38826e50c2d44b28d1215df403e55248ba1f84ebd4c4467
-blobs/sha256/fb609f4a116696050e0463bcabc81cc4a6819d7663c011f254a1ed7ccfda4c22
+blobs/sha256/850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c
+blobs/sha256/9655b37d50eca9b7f7b6555c7f84387777120aad34a2d5dad8128fc6e4d872f9
+blobs/sha256/b63b6a8c18752d651a890883bad83b8cfe1189f3bf74273b18f9326386f015b2
+blobs/sha256/c89ed543266c8756e04791fd68eaa45063c91f802a793c0df6cb522ee435ba2d
+blobs/sha256/f91d70913d919004e5334957efa67defa932b2273ccd34340e7003a2a4bd2d4a
 index.json
 manifest.json
 oci-layout
+root@docker-vm:/home/tankist/Опыты с Терраформом# rm -r terraform-latest.tar
 ```
-2) далее при помощи архиватора, поддерживающего функцию автоматической расшифровки зашифрованных архивов я "залез" в каждый из таких зашифрованных архивов, которые лежат в папке blobs. Я это произвёл следующим образом:</br>
-2.1) при помощи ssh клинета (в моём случае MobaXTerm) скачал архив себе на хостовую ОС (Windows 8.1);</br>
-2.2) отечественным архиватором 7Zip (поддерживает ли майкрософтовский WinRAR такое или нет я не знаю, встроенный в Дебиан 12 графическая версия 7Zip не умеет автоматически просматривать и извлекать зашифрованные файлы) прошёлся по папкам и нашёл нужную, это представлено на рисунке 5:<img src="img/%D0%98%D0%B7%D0%B2%D0%BB%D0%B5%D1%87%D0%B5%D0%BD%D0%B8%D0%B5.PNG" alt="Рисунок 5" width="auto" height="auto"></br>
-Рисунок 5. Содержимое образа Терраформ.</br>
-2.3) извлёк файл terraform без расширения;</br>
-2.4) загрузил данный файл при помощи ssh клинета обратно на ВМ с Linux в папку /home/tankist/blobs/sha256/bin (естественно она была заранее создана);</br>
-3) далее предоставляем полные права 777 (без этого не заработает) и проверяем версию Терраформа:
+Далее необходимо установить российский 7zip, просто unzip не подойдёт!
 ```
-root@docker-debian:/home/tankist/blobs/sha256/bin# chmod 777 terraform
-root@docker-debian:/home/tankist/blobs/sha256/bin# ./terraform version
-Terraform v1.15.0
+root@docker-vm:/home/tankist/Опыты с Терраформом# apt-get install p7zip-full -y
+root@docker-vm:/home/tankist/Опыты с Терраформом# dpkg --list | grep zip
+ii  gzip                                   1.10-4ubuntu4.1                                  amd64        GNU compression utilities
+ii  p7zip                                  16.02+dfsg-8                                     amd64        7zr file archiver with high compression ratio
+ii  p7zip-full                             16.02+dfsg-8                                     amd64        7z and 7za file archivers with high compression ratio
+ii  python3-zipp                           1.0.0-3ubuntu0.1                                 all          pathlib-compatible Zipfile object wrapper - Python 3.x
+```
+Далее в blobs/sha256 находим самый большой по размеру файл (папка bin занимала больше всего памяти если судить по выводу команды docker dive) и ДВАЖДЫ распаковываем его через 7zip:
+```
+root@docker-vm:/home/tankist/Опыты с Терраформом# 7z x 850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 (locale=ru_RU.UTF-8,Utf16=on,HugeFiles=on,64 bits,2 CPUs Intel(R) Core(TM) i5-5200U CPU @ 2.20GHz (306D4),ASM,AES-NI)
+Scanning the drive for archives:
+1 file, 36446777 bytes (35 MiB)
+Extracting archive: 850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c
+--
+Path = 850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c
+Type = gzip
+Headers Size = 10
+Everything is Ok
+Size:       116926976
+Compressed: 36446777
+
+root@docker-vm:/home/tankist/Опыты с Терраформом# 7z x 850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c~
+7-Zip [64] 16.02 : Copyright (c) 1999-2016 Igor Pavlov : 2016-05-21
+p7zip Version 16.02 (locale=ru_RU.UTF-8,Utf16=on,HugeFiles=on,64 bits,2 CPUs Intel(R) Core(TM) i5-5200U CPU @ 2.20GHz (306D4),ASM,AES-NI)
+Scanning the drive for archives:
+1 file, 116926976 bytes (112 MiB)
+Extracting archive: 850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c~
+--
+Path = 850ab86db08b9009333767db0762326b9e77cf592be91d8e23ecdeba5882367c~
+Type = tar
+Physical Size = 116926976
+Headers Size = 2048
+Code Page = UTF-8
+Everything is Ok
+Folders: 1
+Files: 1
+Size:       116924600
+Compressed: 116926976
+```
+Далее удаляем папку blobs и остальные образовавшиеся при распаковки файлы, они нам больше не понадобятся.</br>
+Далее переходим в папку bin, присваиваем файлу terraform максимальные права (иначе может не сработать), после чего проверяем версию:
+```
+root@docker-vm:/home/tankist/Опыты с Терраформом# cd bin && ls -la
+total 114196
+drwx------ 2 root    root         4096 мая  1 15:55 .
+drwxrwxr-x 3 tankist tankist      4096 мая  4 10:50 ..
+-rw-r--r-- 1 root    root    116924600 мая  1 15:50 terraform
+root@docker-vm:/home/tankist/Опыты с Терраформом/bin# chmod 777 terraform
+root@docker-vm:/home/tankist/Опыты с Терраформом/bin# ./terraform --version
+Terraform v1.15.1
 on linux_amd64
 ```
+Задача выполнена!</br>
 С помощью команды docker cp вытащить из образа нужные файлы можно двумя способами.</br>
 Способ 1:
 ```
@@ -260,3 +305,5 @@ tankist@docker-debian:~$ ./terraform version
 Terraform v1.15.0
 on linux_amd64
 ```
+Задача выполнена!</br>
+Вывод по заданию 6 и 6.1: с помощью команды docker cp гораздо проще и быстрее вытащить из образа нужные файлы.
